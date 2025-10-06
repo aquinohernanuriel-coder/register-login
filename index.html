@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Registro / Iniciar sesión — MCFraud</title>
+  <style>
+    /* Reset */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
+
+    /* Fondo: imagen y overlay oscuro con gradiente rojo sutil */
+    body {
+      background: url('https://images.unsplash.com/photo-1549924231-f129b911e442?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat fixed;
+      position: relative;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    body::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.65), rgba(0,0,0,0.75));
+      pointer-events: none;
+    }
+
+    /* Small spotlight effect (animated) */
+    .spot {
+      position: absolute;
+      width: 60vmax;
+      height: 60vmax;
+      left: 50%;
+      top: 10%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle at 50% 30%, rgba(255,0,0,0.06), transparent 20%);
+      filter: blur(40px);
+      mix-blend-mode: screen;
+      animation: float 10s infinite ease-in-out;
+      pointer-events: none;
+    }
+    @keyframes float {
+      0% { transform: translateX(-50%) translateY(0) scale(1); }
+      50% { transform: translateX(-50%) translateY(8%) scale(1.02); }
+      100% { transform: translateX(-50%) translateY(0) scale(1); }
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 960px;
+      margin: 40px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 36px;
+      align-items: center;
+    }
+
+    /* Left panel: branding / slogan */
+    .left {
+      color: #f5f5f5;
+      padding: 36px;
+    }
+    .brand {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .logo {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, #ff4444, #cc0000);
+      border-radius: 12px;
+      display: grid; place-items: center; font-weight: 700; font-size: 24px;
+      box-shadow: 0 12px 40px rgba(204,0,0,0.15);
+    }
+    h1 { font-size: 36px; margin-top: 18px; color: #fff; letter-spacing: -0.4px; }
+    p.lead { color: #ddd; margin-top: 12px; max-width: 44ch; line-height: 1.5; }
+
+    /* Right: card (form) */
+    .card {
+      background: linear-gradient(180deg, rgba(10,10,10,0.9), rgba(0,0,0,0.85));
+      border: 1px solid rgba(255,68,68,0.12);
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      backdrop-filter: blur(6px);
+    }
+
+    .card h2 { color: #ff6666; margin-bottom: 8px; }
+    .card .desc { color: #d7d7d7; font-size: 14px; margin-bottom: 18px; }
+
+    .field { margin-bottom: 14px; }
+    .field label { display:block; color:#bbb; font-size:13px; margin-bottom:6px; }
+    .field input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #222;
+      background: linear-gradient(180deg,#0b0b0b,#050505);
+      color: #eee;
+      font-size: 15px;
+      transition: box-shadow .18s, border-color .18s;
+    }
+    .field input:focus { box-shadow: 0 8px 24px rgba(255,68,68,0.08); border-color: #ff4444; outline: none; }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(90deg,#ff4444,#cc0000);
+      color: #fff; font-weight:600; font-size:15px; cursor:pointer;
+      box-shadow: 0 10px 28px rgba(204,0,0,0.12);
+      transition: transform .12s ease, opacity .12s;
+    }
+    .btn:active { transform: translateY(1px); }
+    .muted { font-size: 13px; color: #bfbfbf; margin-top: 10px; text-align:center; }
+
+    .toggle { text-align:center; margin-top:12px; color:#ccc; }
+    .toggle a { color:#ff6666; text-decoration:none; }
+    .error { color:#ff9b9b; margin-top:10px; font-size:14px; display:none; }
+
+    /* Responsive */
+    @media (max-width: 920px) {
+      .wrap { grid-template-columns: 1fr; padding: 20px; }
+      .left { order: 2; text-align:center; }
+      .logo { margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="spot" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="left">
+      <div class="brand">
+        <div class="logo">M</div>
+        <div>
+          <div style="font-weight:700;color:#fff">Mfraud SHOP</div>
+          <div style="font-size:13px;color:#ddd">Seguridad • Velocidad • Estilo</div>
+        </div>
+      </div>
+
+      <h1>Bienvenido a la tienda</h1>
+      <p class="lead">Accede o crea tu cuenta para ver los mejores productos.</p>
+    </div>
+
+    <div class="card" id="card">
+      <h2 id="form-title">Iniciar sesión</h2>
+      <div class="desc">Ingresa tu correo y contraseña para continuar.</div>
+
+      <div id="error" class="error" role="status" aria-live="polite"></div>
+
+      <div id="form-container">
+        <!-- formulario insertado por JS -->
+      </div>
+
+      <div class="toggle" id="toggle">
+        ¿No tenés cuenta? <a href="#" id="to-register">Registrate</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const REGISTER_URL = '/register';
+  const LOGIN_URL = '/login';
+  const REDIRECT_DEFAULT = 'https://mfraud.onrender.com';
+
+  const formContainer = document.getElementById('form-container');
+  const formTitle = document.getElementById('form-title');
+  const errorBox = document.getElementById('error');
+  const toggle = document.getElementById('toggle');
+
+  let mode = 'login'; // 'login' o 'register'
+
+  function showError(msg, color='#ff9b9b') {
+    errorBox.style.display = 'block';
+    errorBox.style.color = color;
+    errorBox.textContent = msg;
+  }
+  function hideError() {
+    errorBox.style.display = 'none';
+    errorBox.textContent = '';
+  }
+
+  function render() {
+    hideError();
+    if (mode === 'login') {
+      formTitle.textContent = 'Iniciar sesión';
+      toggle.innerHTML = '¿No tenés cuenta? <a href="#" id="to-register">Registrate</a>';
+      formContainer.innerHTML = `
+        <div class="field">
+          <label for="email">Correo electrónico</label>
+          <input id="email" type="email" placeholder="tu@correo.com" />
+        </div>
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <input id="password" type="password" placeholder="••••••••" />
+        </div>
+        <button class="btn" id="submitBtn">Entrar</button>
+      `;
+      document.getElementById('submitBtn').addEventListener('click', onLogin);
+      document.getElementById('to-register').addEventListener('click', (e) => { e.preventDefault(); mode='register'; render(); });
+    } else {
+      formTitle.textContent = 'Registro';
+      toggle.innerHTML = '¿Ya tenés cuenta? <a href="#" id="to-login">Iniciar sesión</a>';
+      formContainer.innerHTML = `
+        <div class="field">
+          <label for="email">Correo electrónico</label>
+          <input id="email" type="email" placeholder="tu@correo.com" />
+        </div>
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <input id="password" type="password" placeholder="Mínimo 6 caracteres" />
+        </div>
+        <button class="btn" id="submitBtn">Registrarse</button>
+      `;
+      document.getElementById('submitBtn').addEventListener('click', onRegister);
+      document.getElementById('to-login').addEventListener('click', (e) => { e.preventDefault(); mode='login'; render(); });
+    }
+  }
+
+  async function onRegister(e) {
+    e.preventDefault();
+    hideError();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) { showError('Completa todos los campos.'); return; }
+    if (password.length < 6) { showError('La contraseña debe tener al menos 6 caracteres.'); return; }
+
+    try {
+      const res = await fetch(REGISTER_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        mode = 'login';
+        render();
+        showError('Registro exitoso. Iniciá sesión.', '#b6ffb6');
+      } else {
+        showError(data.message || 'Error al registrar.');
+      }
+    } catch (err) {
+      console.error(err);
+      showError('Error de conexión.');
+    }
+  }
+
+  async function onLogin(e) {
+    e.preventDefault();
+    hideError();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) { showError('Completa todos los campos.'); return; }
+
+    try {
+      const res = await fetch(LOGIN_URL, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const redirectUrl = data.redirect || REDIRECT_DEFAULT;
+        // redirigir a la tienda
+        window.location.href = redirectUrl;
+      } else {
+        showError(data.message || 'Error de inicio de sesión.');
+      }
+    } catch (err) {
+      console.error(err);
+      showError('Error de conexión.');
+    }
+  }
+
+  // Render inicial
+  render();
+</script>
+</body>
+</html>
