@@ -1,34 +1,79 @@
-from flask import Flask, send_from_directory, request, jsonify
-import os
+const express = require("express");
+const path = require("path");
+const sqlite3 = require("sqlite3").verbose();
+const bcrypt = require("bcrypt");
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-app = Flask(__name__, static_folder='.', static_url_path='')
+// --- CONFIGURACIÓN ---
+app.use(express.json());
+app.use(express.static(__dirname));
 
-# Ruta principal: sirve tu index.html
-@app.route('/')
-def serve_index():
-    return send_from_directory('.', 'index.html')
+// --- BASE DE DATOS (SQLite) ---
+const dbFile = path.join(__dirname, "auth.db");
+const db = new sqlite3.Database(dbFile);
 
-# Ejemplo de endpoint para registro
-@app.route('/register', methods=['POST'])
-def register():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    # Aquí podrías guardar en base de datos o archivo
-    print(f"Usuario registrado: {username}")
-    return jsonify({"message": "Usuario registrado con éxito"}), 201
+// Crear tabla si no existe
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE,
+      password TEXT
+    )
+  `);
+});
 
-# Ejemplo de endpoint para login
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    # Aquí validarías usuario/contraseña
-    print(f"Intento de login: {username}")
-    return jsonify({"message": "Login exitoso"}), 200
+// --- RUTA PRINCIPAL ---
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
-# Puerto dinámico para Render
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+// --- REGISTRO ---
+app.post("/register", async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password)
+    return res.status(400).json({ message: "Faltan campos" });
+
+  // Hashear la contraseña
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // Insertar usuario en DB
+  const query = "INSERT INTO users (username, password) VALUES (?, ?)";
+  db.run(query, [username, hashedPassword], function (err) {
+    if (err) {
+      if (err.message.includes("UNIQUE")) {
+        return res.status(409).json({ message: "El usuario ya existe" });
+      }
+      console.error(err);
+      return res.status(500).json({ message: "Error en el servidor" });
+    }
+    res.status(201).json({ message: "Usuario registrado con éxito" });
+  });
+});
+
+// --- LOGIN ---
+app.post("/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password)
+    return res.status(400).json({ message: "Faltan campos" });
+
+  const query = "SELECT * FROM users WHERE username = ?";
+  db.get(query, [username], async (err, user) => {
+    if (err) return res.status(500).json({ message: "Error en el servidor" });
+    if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword)
+      return res.status(401).json({ message: "Contraseña incorrecta" });
+
+    res.json({ message: "Login exitoso" });
+  });
+});
+
+// --- INICIAR SERVIDOR ---
+app.listen(PORT, () => {
+  console.log(`✅ Servidor corriendo en puerto ${PORT}`);
+});
